@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+  :root {
+    --bg:#080b11;--panel:#0f1520;--panel2:#111827;--border:#1a2640;--accent:#00d4ff;
+    --accent2:#ff6b35;--star:#ffd700;--text:#b8cce0;--muted:#3d5068;--green:#00e87a;
+    --red:#ff3355;--riding:#ff9f43;--purple:#a855f7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;min-height:100vh;padding:14px 12px;}
+
+  h1{font-family:'Share Tech Mono',monospace;color:var(--accent);font-size:15px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  h1::before{content:"▶";color:var(--accent2);font-size:11px;}
+  .subtitle{font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-bottom:12px;}
+  .section-title{font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;margin-top:12px;}
+
+  /* upload */
+  .upload-zone{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--panel);position:relative;}
+  .upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:#0d1929;}
+  .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .upload-zone .icon{font-size:22px;margin-bottom:4px;}
+  .upload-zone .label{color:var(--text);font-size:12px;font-weight:600;}
+  .upload-zone .hint{color:var(--muted);font-size:10px;margin-top:2px;font-family:'Share Tech Mono',monospace;}
+  .file-info{background:var(--panel);border:1px solid var(--green);border-radius:6px;padding:7px 10px;display:none;align-items:center;gap:8px;margin-top:6px;}
+  .file-info.show{display:flex;}
+  .file-info .name{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);flex:1;}
+  .file-info .size{color:var(--muted);font-size:9px;font-family:'Share Tech Mono',monospace;}
+
+  /* riding notice */
+  .riding-notice{background:linear-gradient(135deg,#140800,#1e1000);border:1px solid var(--riding);border-radius:7px;padding:9px 12px;margin-top:12px;font-size:11px;}
+  .riding-notice .title{color:var(--riding);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+  .riding-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+  .riding-badge{display:inline-flex;align-items:center;gap:3px;background:#1e0d00;border:1px solid var(--riding);border-radius:3px;padding:2px 6px;font-size:9px;color:var(--riding);font-family:'Share Tech Mono',monospace;}
+
+  /* filter bar */
+  .filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;margin-top:4px;}
+  .filter-label{font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;text-transform:uppercase;}
+  .star-filter-btn{padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--panel);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;transition:all .15s;}
+  .star-filter-btn:hover{border-color:var(--star);color:var(--star);}
+  .star-filter-btn.active{background:#1a1400;border-color:var(--star);color:var(--star);}
+  .star-filter-btn.active-all{background:#0d1929;border-color:var(--accent);color:var(--accent);}
+
+  /* table */
+  .pet-table-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:11px;}
+  thead{background:#090e19;}
+  th{padding:6px 8px;text-align:left;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:400;border-bottom:1px solid var(--border);}
+  td{padding:5px 8px;border-bottom:1px solid #0d1420;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#0d1929;}
+  tr.riding-row td{background:linear-gradient(90deg,#0e0600,transparent);}
+  tr.riding-row:hover td{background:#120b00;}
+  tr.riding-row td:first-child{border-left:2px solid var(--riding);}
+  tr.changed-row td{background:linear-gradient(90deg,#001a08,transparent);}
+  tr.changed-row:hover td{background:#001f0a;}
+
+  .stars{color:var(--star);font-size:10px;letter-spacing:0.5px;}
+  .stars .empty{color:#1f2d40;}
+  .event-badge{background:#0d1929;border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);}
+  .pet-id{font-family:'Share Tech Mono',monospace;color:var(--accent);font-size:10px;}
+
+  /* Custom select styling */
+  .pet-select-wrap{position:relative;width:100%;max-width:160px;}
+  .pet-select-wrap select{
+    width:100%;background:#090e19;border:1px solid var(--border);border-radius:4px;
+    color:var(--text);padding:3px 22px 3px 6px;font-family:'Share Tech Mono',monospace;
+    font-size:10px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+  }
+  .pet-select-wrap::after{content:'▾';position:absolute;right:6px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:9px;pointer-events:none;}
+  .pet-select-wrap select:focus{border-color:var(--accent);}
+  .pet-select-wrap select:disabled{color:var(--muted);cursor:not-allowed;opacity:.5;}
+  .pet-select-wrap select.changed{border-color:var(--green);color:var(--green);}
+
+  /* star selector inline */
+  .star-selector{display:flex;gap:2px;align-items:center;flex-wrap:nowrap;}
+  .star-btn{background:none;border:1px solid var(--border);border-radius:3px;padding:2px 5px;cursor:pointer;font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;transition:all .12s;white-space:nowrap;}
+  .star-btn:hover{border-color:var(--star);color:var(--star);}
+  .star-btn.active{background:#1a1400;border-color:var(--star);color:var(--star);}
+
+  .max-star-badge{display:inline-block;background:linear-gradient(135deg,#1a1400,#241e00);border:1px solid var(--star);border-radius:3px;padding:1px 4px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--star);}
+  .lock-icon{font-size:11px;}
+  .col-toggle{width:20px;text-align:center;}
+  input[type=checkbox]{accent-color:var(--accent);cursor:pointer;width:13px;height:13px;}
+  input[type=checkbox]:disabled{cursor:not-allowed;opacity:.4;}
+  .select-all-row td{padding:5px 8px;background:#090e19;border-bottom:1px solid var(--border);}
+  .select-all-row label{font-size:9px;color:var(--muted);cursor:pointer;font-family:'Share Tech Mono',monospace;user-select:none;display:flex;align-items:center;gap:5px;}
+
+  /* bottom */
+  .bottom-bar{margin-top:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .stat-chip{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);}
+  .stat-chip span{color:var(--accent);font-weight:700;}
+  .btn{padding:7px 16px;border-radius:6px;border:none;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .15s;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-primary:hover:not(:disabled){background:#33e4ff;transform:translateY(-1px);}
+  .btn-primary:disabled{background:var(--muted);color:#222;cursor:not-allowed;}
+  .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  .btn-secondary:hover{border-color:var(--text);color:var(--text);}
+  .btn-sm{padding:4px 10px;font-size:10px;border-radius:4px;}
+
+  .progress-bar{height:2px;background:var(--border);border-radius:1px;margin-top:7px;overflow:hidden;display:none;}
+  .progress-bar.show{display:block;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .3s;}
+  .log{margin-top:8px;background:#050810;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:'Share Tech Mono',monospace;font-size:9px;max-height:130px;overflow-y:auto;display:none;}
+  .log.show{display:block;}
+  .log-line{color:var(--muted);line-height:2;}
+  .log-line.ok{color:var(--green);}
+  .log-line.warn{color:var(--accent2);}
+  .log-line.err{color:var(--red);}
+  .dl-link{display:none;margin-top:8px;padding:9px 12px;background:linear-gradient(135deg,#001510,#001f18);border:1px solid var(--green);border-radius:6px;align-items:center;gap:10px;}
+  .dl-link.show{display:flex;}
+  .dl-link a{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700;text-decoration:none;letter-spacing:1px;}
+  .dl-link a:hover{text-decoration:underline;}
+  .dl-info{font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;}
+
+  /* Group labels in select */
+  optgroup{color:var(--accent2);font-size:9px;}
+  option{background:#090e19;color:var(--text);}
+  option.opt-riding{color:var(--riding);}
+
+  /* Tooltip */
+  .tip{position:relative;display:inline-block;}
+  .tip:hover::after{content:attr(data-tip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:#0d1929;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:9px;font-family:'Share Tech Mono',monospace;white-space:nowrap;color:var(--text);z-index:10;pointer-events:none;}
+
+  .changed-indicator{color:var(--green);font-size:9px;font-family:'Share Tech Mono',monospace;}
+  .col-star-filter{min-width:110px;}
+</style>
+</head>
+<body>
+
+<h1>Pet Patcher v3</h1>
+<div class="subtitle">// smsSungVatCauVong · đổi pet hàng loạt · all pets · tự chọn sao · giữ nguyên riding</div>
+
+<div class="section-title">[ 01 ] Upload file event</div>
+<div class="upload-zone" id="uploadZone">
+  <input type="file" id="fileInput" accept="*">
+  <div class="icon">📁</div>
+  <div class="label">Kéo thả hoặc click để chọn file <code style="color:var(--accent)">event</code></div>
+  <div class="hint">// file "event" ở ROOT JAR · 309,950 bytes · KHÔNG phải "data/event"</div>
+</div>
+<div class="file-info" id="fileInfo">
+  <span style="color:var(--green)">✓</span>
+  <span class="name" id="fileName">—</span>
+  <span class="size" id="fileSize">—</span>
+</div>
+
+<div class="riding-notice">
+  <div class="title">⚠ Sủng vật cưỡi — bảo vệ tự động (không thể sửa)</div>
+  <div class="riding-tags" id="ridingTags"></div>
+  <div style="margin-top:5px;font-size:9px;color:var(--muted);">// Đổi petId cưỡi → mất riding vĩnh viễn (bit lock trong at.java:b())</div>
+</div>
+
+<div class="section-title">[ 02 ] Chọn lệnh cần sửa</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Lọc sao:</span>
+  <button class="star-filter-btn active-all" data-star="all" onclick="setGlobalStarFilter('all',this)">Tất cả</button>
+  <button class="star-filter-btn" data-star="1" onclick="setGlobalStarFilter(1,this)">⭐×1</button>
+  <button class="star-filter-btn" data-star="2" onclick="setGlobalStarFilter(2,this)">⭐×2</button>
+  <button class="star-filter-btn" data-star="3" onclick="setGlobalStarFilter(3,this)">⭐×3</button>
+  <button class="star-filter-btn" data-star="4" onclick="setGlobalStarFilter(4,this)">⭐×4</button>
+  <button class="star-filter-btn" data-star="5" onclick="setGlobalStarFilter(5,this)">⭐×5</button>
+  <span class="filter-label" style="margin-left:6px">→ áp dụng cho tất cả dropdown</span>
+</div>
+
+<div class="pet-table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-toggle">✓</th>
+        <th>Event</th>
+        <th>Offset</th>
+        <th>Pet gốc</th>
+        <th>Sao gốc</th>
+        <th>Đổi thành (tất cả pet)</th>
+        <th class="col-star-filter">Lọc sao / Sao mới</th>
+      </tr>
+    </thead>
+    <tbody id="petTableBody">
+      <tr class="select-all-row">
+        <td colspan="7">
+          <label><input type="checkbox" id="selectAll"> Chọn / bỏ chọn tất cả (bỏ qua riding)</label>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="bottom-bar">
+  <div class="stat-chip">Đã chọn: <span id="selectedCount">0</span></div>
+  <div class="stat-chip">Thay đổi: <span id="changedCount">0</span></div>
+  <div class="stat-chip">Bị khóa: <span id="lockedCount" style="color:var(--riding)">5</span></div>
+  <button class="btn btn-secondary btn-sm" id="btnReset">Reset</button>
+  <button class="btn btn-primary" id="btnPatch" disabled>▶ PATCH & DOWNLOAD</button>
+</div>
+
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="log" id="log"></div>
+<div class="dl-link" id="dlLink">
+  <div>
+    <a id="dlAnchor" href="#" download="event">⬇ Tải file event đã patch</a>
+    <div class="dl-info" id="dlInfo">—</div>
+  </div>
+</div>
+
+<script>
+// ─── PET DATA ──────────────────────────────────────────────────────────────
+const PET_DATA = {
+  0:{star:1,remaining:3,group:0,f11:6},1:{star:2,remaining:1,group:0,f11:8},
+  2:{star:3,remaining:0,group:0,f11:10},3:{star:4,remaining:0,group:0,f11:12},
+  4:{star:1,remaining:1,group:0,f11:7},5:{star:2,remaining:0,group:0,f11:8},
+  6:{star:3,remaining:0,group:0,f11:6},7:{star:1,remaining:2,group:0,f11:6},
+  8:{star:2,remaining:1,group:0,f11:8},9:{star:3,remaining:0,group:0,f11:10},
+  10:{star:1,remaining:2,group:0,f11:8},11:{star:2,remaining:1,group:0,f11:8},
+  12:{star:3,remaining:0,group:0,f11:10},13:{star:1,remaining:0,group:0,f11:7},
+  14:{star:2,remaining:0,group:0,f11:8},15:{star:4,remaining:0,group:0,f11:12},
+  16:{star:4,remaining:0,group:0,f11:11},
+  17:{star:1,remaining:3,group:1,f11:7},18:{star:2,remaining:2,group:1,f11:9},
+  19:{star:3,remaining:1,group:1,f11:11},20:{star:4,remaining:0,group:1,f11:12},
+  21:{star:1,remaining:2,group:1,f11:7},22:{star:2,remaining:1,group:1,f11:9},
+  23:{star:3,remaining:0,group:1,f11:11},24:{star:4,remaining:0,group:1,f11:11},
+  25:{star:1,remaining:2,group:1,f11:7},26:{star:2,remaining:1,group:1,f11:9},
+  27:{star:3,remaining:0,group:1,f11:10},28:{star:4,remaining:0,group:1,f11:12},
+  29:{star:4,remaining:0,group:1,f11:12},30:{star:1,remaining:2,group:1,f11:8},
+  31:{star:2,remaining:1,group:1,f11:9},32:{star:3,remaining:0,group:1,f11:11},
+  33:{star:4,remaining:0,group:1,f11:12},34:{star:1,remaining:1,group:1,f11:7},
+  35:{star:2,remaining:0,group:1,f11:11},
+  36:{star:1,remaining:0,group:2,f11:8},37:{star:2,remaining:2,group:2,f11:10},
+  38:{star:3,remaining:1,group:2,f11:12},39:{star:4,remaining:0,group:2,f11:13},
+  40:{star:1,remaining:2,group:2,f11:9},41:{star:2,remaining:1,group:2,f11:10},
+  42:{star:3,remaining:0,group:2,f11:12},43:{star:1,remaining:2,group:2,f11:9},
+  44:{star:2,remaining:1,group:2,f11:10},45:{star:3,remaining:0,group:2,f11:12},
+  46:{star:1,remaining:0,group:2,f11:8},47:{star:2,remaining:0,group:2,f11:10},
+  48:{star:3,remaining:0,group:2,f11:12},49:{star:2,remaining:1,group:2,f11:10},
+  50:{star:3,remaining:0,group:2,f11:12},51:{star:4,remaining:0,group:2,f11:12},
+  52:{star:1,remaining:1,group:3,f11:8},53:{star:2,remaining:0,group:3,f11:9},
+  54:{star:3,remaining:0,group:3,f11:10},55:{star:4,remaining:0,group:3,f11:12},
+  56:{star:1,remaining:1,group:3,f11:7},57:{star:2,remaining:0,group:3,f11:8},
+  58:{star:3,remaining:0,group:3,f11:10},59:{star:1,remaining:2,group:3,f11:6},
+  60:{star:2,remaining:1,group:3,f11:8},61:{star:3,remaining:0,group:3,f11:10},
+  62:{star:4,remaining:0,group:3,f11:10},63:{star:1,remaining:2,group:3,f11:6},
+  64:{star:2,remaining:1,group:3,f11:8},65:{star:3,remaining:0,group:3,f11:10},
+  66:{star:2,remaining:0,group:3,f11:8},67:{star:3,remaining:0,group:3,f11:10},
+  68:{star:1,remaining:3,group:4,f11:7},69:{star:2,remaining:2,group:4,f11:8},
+  70:{star:3,remaining:1,group:4,f11:10},71:{star:4,remaining:0,group:4,f11:13},
+  72:{star:1,remaining:2,group:4,f11:7},73:{star:2,remaining:1,group:4,f11:8},
+  74:{star:3,remaining:0,group:4,f11:10},75:{star:1,remaining:2,group:4,f11:6},
+  76:{star:2,remaining:0,group:4,f11:8},77:{star:3,remaining:0,group:4,f11:10},
+  78:{star:4,remaining:0,group:4,f11:12},79:{star:1,remaining:2,group:4,f11:7},
+  80:{star:2,remaining:1,group:4,f11:8},81:{star:3,remaining:0,group:4,f11:10},
+  82:{star:1,remaining:0,group:4,f11:7},83:{star:2,remaining:0,group:4,f11:9},
+  84:{star:4,remaining:0,group:3,f11:12},
+  85:{star:5,remaining:0,group:255,f11:10},86:{star:5,remaining:0,group:255,f11:14},
+  87:{star:3,remaining:0,group:0,f11:10},88:{star:4,remaining:0,group:0,f11:11},
+  89:{star:5,remaining:0,group:0,f11:12},
+  90:{star:3,remaining:0,group:1,f11:10},91:{star:4,remaining:0,group:1,f11:11},
+  92:{star:5,remaining:0,group:1,f11:12},
+  93:{star:3,remaining:1,group:2,f11:10},94:{star:4,remaining:0,group:2,f11:11},
+  95:{star:5,remaining:0,group:2,f11:12},
+  96:{star:3,remaining:0,group:3,f11:10},97:{star:4,remaining:0,group:3,f11:11},
+  98:{star:5,remaining:0,group:3,f11:13},
+  99:{star:3,remaining:0,group:4,f11:10},100:{star:4,remaining:0,group:4,f11:11},
+  101:{star:5,remaining:0,group:4,f11:13}
+};
+
+const RIDING = {
+  13:'🌿 Thực Vật Tọa Kỵ',
+  34:'⚙️ Kim Loại Tọa Kỵ',
+  49:'🦅 Phi Hành Tọa Kỵ',
+  66:'🐗 Dã thú Tọa Kỵ',
+  82:'🐟 Hải Dương Tọa Kỵ'
+};
+
+const OPCODES = [
+  {fileOffset:3413,   event:1,  petId:13},  // riding (sửa: thực tế là pet#13, không phải 43)
+  {fileOffset:11946,  event:1,  petId:13},  // riding
+  {fileOffset:60098,  event:5,  petId:22},
+  {fileOffset:61429,  event:5,  petId:33},
+  {fileOffset:73052,  event:9,  petId:34},  // riding
+  {fileOffset:76163,  event:9,  petId:49},  // riding
+  {fileOffset:91038,  event:13, petId:52},
+  {fileOffset:112609, event:25, petId:46},
+  {fileOffset:116321, event:27, petId:58},
+  {fileOffset:135710, event:31, petId:83},
+  {fileOffset:141454, event:34, petId:29},
+  {fileOffset:153975, event:36, petId:68},
+  {fileOffset:183787, event:44, petId:17},
+  {fileOffset:185752, event:44, petId:66},  // riding
+  {fileOffset:191228, event:46, petId:15},
+  {fileOffset:200922, event:48, petId:82},  // riding
+  {fileOffset:219080, event:49, petId:47},  // bổ sung mới
+  {fileOffset:221650, event:50, petId:36},  // bổ sung mới
+  {fileOffset:231686, event:51, petId:89},
+  {fileOffset:232340, event:51, petId:92},
+  {fileOffset:233044, event:51, petId:101},
+  {fileOffset:233833, event:51, petId:98},
+  {fileOffset:235165, event:51, petId:95},
+  {fileOffset:243874, event:54, petId:4},
+  {fileOffset:244145, event:54, petId:25},
+  {fileOffset:244380, event:54, petId:56},
+];
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let fileBytes = null;
+const selections = {};
+const targetPetIds = {};
+const rowStarFilters = {}; // per-row star filter
+let globalStarFilter = 'all';
+
+// ─── Build all-pets list sorted by star ────────────────────────────────────
+const GROUP_NAMES = {0:'Nhóm 0',1:'Nhóm 1',2:'Nhóm 2',3:'Nhóm 3',4:'Nhóm 4',255:'Đặc biệt'};
+
+function getAllPets(starFilter) {
+  const ids = Object.keys(PET_DATA).map(Number).sort((a,b)=>{
+    const pa = PET_DATA[a], pb = PET_DATA[b];
+    if(pa.star !== pb.star) return pa.star - pb.star;
+    if(pa.group !== pb.group) return pa.group - pb.group;
+    return a - b;
+  });
+  if(starFilter === 'all') return ids;
+  return ids.filter(id => PET_DATA[id].star === starFilter);
+}
+
+function starsHtml(star, max) {
+  let s = '';
+  for(let i=1;i<=5;i++){
+    if(i<=star) s+='★';
+    else if(i<=max) s+='<span class="empty">☆</span>';
+  }
+  return s;
+}
+
+function buildSelectOptions(currentId, starFilter) {
+  const pets = getAllPets(starFilter === 'all' ? 'all' : parseInt(starFilter));
+  let html = '';
+  let lastStar = -1;
+  pets.forEach(id => {
+    const p = PET_DATA[id];
+    if(p.star !== lastStar) {
+      if(lastStar !== -1) html += '</optgroup>';
+      html += `<optgroup label="⭐ ${p.star}성">`;
+      lastStar = p.star;
+    }
+    const isRiding = id in RIDING;
+    const ridingTag = isRiding ? ' 🔒' : '';
+    const sel = id === currentId ? 'selected' : '';
+    const cls = isRiding ? ' class="opt-riding"' : '';
+    html += `<option value="${id}" ${sel}${cls}>#${id}${ridingTag} ⭐${p.star} Gr${p.group}</option>`;
+  });
+  if(lastStar !== -1) html += '</optgroup>';
+  return html;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('petTableBody');
+  const saRow = tbody.querySelector('.select-all-row');
+  tbody.innerHTML = '';
+  tbody.appendChild(saRow);
+
+  OPCODES.forEach((op, idx) => {
+    const isLocked = op.petId in RIDING;
+    const orig = PET_DATA[op.petId] || {star:'?', remaining:0};
+    const origMax = typeof orig.star === 'number' ? orig.star + orig.remaining : '?';
+    const target = targetPetIds[idx] !== undefined ? targetPetIds[idx] : op.petId;
+    const tp = PET_DATA[target] || orig;
+    const changed = target !== op.petId;
+    const rowFilter = rowStarFilters[idx] !== undefined ? rowStarFilters[idx] : 'all';
+
+    const tr = document.createElement('tr');
+    if(isLocked) tr.classList.add('riding-row');
+    else if(changed) tr.classList.add('changed-row');
+
+    if(isLocked) {
+      tr.innerHTML = `
+        <td class="col-toggle"><span class="lock-icon">🔒</span></td>
+        <td><span class="event-badge">Ev.${op.event}</span></td>
+        <td><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted)">${op.fileOffset}</span></td>
+        <td><span class="pet-id">#${op.petId}</span></td>
+        <td><span class="stars">${starsHtml(orig.star,origMax)}</span></td>
+        <td colspan="2" style="color:var(--riding);font-family:'Share Tech Mono',monospace;font-size:9px">${RIDING[op.petId]} — không thể sửa</td>
+      `;
+    } else {
+      const newStarMax = tp.star + (tp.remaining||0);
+      tr.innerHTML = `
+        <td class="col-toggle">
+          <input type="checkbox" data-idx="${idx}" ${selections[idx] ? 'checked' : ''}>
+        </td>
+        <td><span class="event-badge">Ev.${op.event}</span></td>
+        <td><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted)">${op.fileOffset}</span></td>
+        <td><span class="pet-id">#${op.petId}</span></td>
+        <td><span class="stars">${starsHtml(orig.star,origMax)}</span></td>
+        <td>
+          <div class="pet-select-wrap">
+            <select data-idx="${idx}" class="${changed?'changed':''}">
+              ${buildSelectOptions(target, rowFilter)}
+            </select>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div class="star-selector">
+              <button class="star-btn ${rowFilter==='all'?'active':''}" data-idx="${idx}" data-sf="all" onclick="setRowStarFilter(${idx},'all',this)">All</button>
+              ${[1,2,3,4,5].map(s=>`<button class="star-btn ${rowFilter==s?'active':''}" data-idx="${idx}" data-sf="${s}" onclick="setRowStarFilter(${idx},${s},this)">★${s}</button>`).join('')}
+            </div>
+            <div id="newstar-${idx}">
+              <span class="stars">${starsHtml(tp.star, newStarMax)}</span>
+              ${changed ? `<span class="max-star-badge">★${tp.star}</span>` : ''}
+            </div>
+          </div>
+        </td>
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('input[type=checkbox][data-idx]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      selections[parseInt(e.target.dataset.idx)] = e.target.checked;
+      updateStats();
+    });
+  });
+
+  tbody.querySelectorAll('select[data-idx]').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const idx = parseInt(e.target.dataset.idx);
+      const newId = parseInt(e.target.value);
+      targetPetIds[idx] = newId;
+      e.target.className = newId !== OPCODES[idx].petId ? 'changed' : '';
+      // Update new star display
+      const tp = PET_DATA[newId] || {};
+      const newStarMax = (tp.star||0) + (tp.remaining||0);
+      const changed = newId !== OPCODES[idx].petId;
+      document.getElementById(`newstar-${idx}`).innerHTML =
+        `<span class="stars">${starsHtml(tp.star, newStarMax)}</span>${changed?`<span class="max-star-badge">★${tp.star}</span>`:''}`;
+      // Update row class
+      const row = e.target.closest('tr');
+      if(changed) row.classList.add('changed-row'); else row.classList.remove('changed-row');
+      updateStats();
+    });
+  });
+}
+
+function setRowStarFilter(idx, sf, btn) {
+  rowStarFilters[idx] = sf;
+  // Update button styles in this row
+  const row = btn.closest('tr');
+  row.querySelectorAll('.star-btn[data-idx]').forEach(b => {
+    b.classList.toggle('active', b.dataset.sf == sf);
+  });
+  // Rebuild select options
+  const sel = row.querySelector(`select[data-idx="${idx}"]`);
+  if(!sel) return;
+  const currentTarget = targetPetIds[idx] !== undefined ? targetPetIds[idx] : OPCODES[idx].petId;
+  sel.innerHTML = buildSelectOptions(currentTarget, sf);
+  // If current target not available with this filter, reset to first available
+  if(sf !== 'all') {
+    const available = getAllPets(parseInt(sf));
+    if(!available.includes(currentTarget)) {
+      const first = available[0];
+      if(first !== undefined) {
+        targetPetIds[idx] = first;
+        sel.value = first;
+        sel.className = first !== OPCODES[idx].petId ? 'changed' : '';
+        const tp = PET_DATA[first] || {};
+        const newStarMax = (tp.star||0) + (tp.remaining||0);
+        document.getElementById(`newstar-${idx}`).innerHTML =
+          `<span class="stars">${starsHtml(tp.star, newStarMax)}</span><span class="max-star-badge">★${tp.star}</span>`;
+      }
+    }
+  }
+  updateStats();
+}
+
+function setGlobalStarFilter(sf, btn) {
+  globalStarFilter = sf;
+  document.querySelectorAll('.star-filter-btn').forEach(b => {
+    b.className = 'star-filter-btn';
+    if(b.dataset.star == sf) b.className += sf === 'all' ? ' active-all' : ' active';
+  });
+  // Apply to all non-locked rows
+  OPCODES.forEach((op, idx) => {
+    if(op.petId in RIDING) return;
+    rowStarFilters[idx] = sf;
+  });
+  renderTable();
+  updateStats();
+}
+
+function updateStats() {
+  const sel = Object.values(selections).filter(Boolean).length;
+  const changed = OPCODES.filter((op,idx) => {
+    if(op.petId in RIDING) return false;
+    const t = targetPetIds[idx] !== undefined ? targetPetIds[idx] : op.petId;
+    return selections[idx] && t !== op.petId;
+  }).length;
+  document.getElementById('selectedCount').textContent = sel;
+  document.getElementById('changedCount').textContent = changed;
+  document.getElementById('btnPatch').disabled = !fileBytes || sel === 0;
+}
+
+// ─── Select All ─────────────────────────────────────────────────────────────
+document.getElementById('selectAll').addEventListener('change', e => {
+  OPCODES.forEach((op,idx) => {
+    if(!(op.petId in RIDING)) selections[idx] = e.target.checked;
+  });
+  renderTable(); updateStats();
+});
+
+// ─── Upload ──────────────────────────────────────────────────────────────────
+const zone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+function handleFile(file) {
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    fileBytes = new Uint8Array(e.target.result);
+    document.getElementById('fileInfo').classList.add('show');
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = `${(file.size/1024).toFixed(1)} KB`;
+    addLog('ok', `✓ Loaded: ${file.name} (${file.size} bytes)`);
+
+    // Kiểm tra đúng file chưa
+    const EXPECTED_SIZE = 309950;
+    const WRONG_SIZE    = 119228;
+    if(file.size === WRONG_SIZE) {
+      addLog('err', `✗ SAI FILE! Bạn đang upload "data/event" (${file.size} bytes)`);
+      addLog('err', `  → Phải dùng file "event" ở ROOT của JAR (${EXPECTED_SIZE} bytes)`);
+      addLog('err', `  → Giải nén JAR, lấy file "event" (không có thư mục cha)`);
+      fileBytes = null; updateStats(); return;
+    }
+    if(file.size !== EXPECTED_SIZE) {
+      addLog('warn', `⚠ Kích thước lạ: ${file.size} bytes (chuẩn: ${EXPECTED_SIZE}). Tiếp tục verify...`);
+    } else {
+      addLog('ok', `✓ Kích thước đúng: ${file.size} bytes`);
+    }
+
+    let valid = true;
+    for(const op of OPCODES) {
+      if(op.fileOffset >= fileBytes.length) {
+        valid = false;
+        addLog('err', `✗ offset ${op.fileOffset} nằm ngoài file (size=${fileBytes.length}) — sai file!`);
+        continue;
+      }
+      if(fileBytes[op.fileOffset-2] !== 26 || fileBytes[op.fileOffset-1] !== 3) {
+        valid = false;
+        addLog('warn', `⚠ offset ${op.fileOffset}: opcode không khớp`);
+      }
+    }
+    if(valid) addLog('ok', `✓ Verify OK: ${OPCODES.length} opcode hợp lệ`);
+    addLog('warn', `🔒 ${Object.keys(RIDING).length} lệnh riding đã bị khóa tự động`);
+    updateStats();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ─── Patch ───────────────────────────────────────────────────────────────────
+document.getElementById('btnPatch').addEventListener('click', async () => {
+  if(!fileBytes) return;
+  const btn = document.getElementById('btnPatch');
+  btn.disabled = true;
+  const pb = document.getElementById('progressBar');
+  const pf = document.getElementById('progressFill');
+  pb.classList.add('show');
+  document.getElementById('dlLink').classList.remove('show');
+
+  const patched = new Uint8Array(fileBytes);
+  let count = 0;
+  const toProcess = OPCODES.filter((_,idx) => selections[idx] && !(OPCODES[idx].petId in RIDING));
+
+  addLog('', '▶ Bắt đầu patch...');
+
+  for(let i=0; i<toProcess.length; i++) {
+    const op = toProcess[i];
+    const idx = OPCODES.indexOf(op);
+    const target = targetPetIds[idx] !== undefined ? targetPetIds[idx] : op.petId;
+    await new Promise(r => setTimeout(r, 20));
+
+    if(target === op.petId) {
+      addLog('', `  skip #${op.petId} (không đổi)`);
+    } else if(patched[op.fileOffset-2] === 26 && patched[op.fileOffset-1] === 3) {
+      const old = patched[op.fileOffset];
+      patched[op.fileOffset] = target;
+      const tp = PET_DATA[target];
+      addLog('ok', `  ✓ Ev.${op.event} off.${op.fileOffset}: #${old}→#${target} ⭐${tp?tp.star:'?'}`);
+      count++;
+    } else {
+      addLog('err', `  ✗ Ev.${op.event} off.${op.fileOffset}: opcode không khớp!`);
+    }
+    pf.style.width = `${Math.round((i+1)/toProcess.length*100)}%`;
+  }
+
+  // Verify riding untouched
+  let ridingOk = true;
+  for(const op of OPCODES) {
+    if(op.petId in RIDING) {
+      if(patched[op.fileOffset] !== op.petId) {
+        addLog('err', `  ✗ RIDING bị thay đổi ngoài ý muốn tại offset ${op.fileOffset}!`);
+        ridingOk = false;
+      }
+    }
+  }
+  if(ridingOk) addLog('ok', `  🔒 Tất cả sủng vật cưỡi nguyên vẹn`);
+  addLog('ok', `✓ Xong: ${count} thay đổi`);
+
+  const blob = new Blob([patched], {type:'application/octet-stream'});
+  const url = URL.createObjectURL(blob);
+  document.getElementById('dlAnchor').href = url;
+  document.getElementById('dlAnchor').download = 'event';
+  document.getElementById('dlInfo').textContent = `${patched.length} bytes · ${count} thay đổi · riding intact`;
+  document.getElementById('dlLink').classList.add('show');
+  btn.disabled = false;
+});
+
+// ─── Reset ───────────────────────────────────────────────────────────────────
+document.getElementById('btnReset').addEventListener('click', () => {
+  Object.keys(selections).forEach(k => delete selections[k]);
+  Object.keys(targetPetIds).forEach(k => delete targetPetIds[k]);
+  Object.keys(rowStarFilters).forEach(k => delete rowStarFilters[k]);
+  globalStarFilter = 'all';
+  document.getElementById('selectAll').checked = false;
+  document.querySelectorAll('.star-filter-btn').forEach(b => {
+    b.className = 'star-filter-btn' + (b.dataset.star==='all'?' active-all':'');
+  });
+  renderTable(); updateStats();
+  document.getElementById('dlLink').classList.remove('show');
+  const log = document.getElementById('log');
+  log.innerHTML = ''; log.classList.remove('show');
+  document.getElementById('progressBar').classList.remove('show');
+});
+
+// ─── Log helper ───────────────────────────────────────────────────────────────
+function addLog(type, msg) {
+  const log = document.getElementById('log');
+  log.classList.add('show');
+  const d = document.createElement('div');
+  d.className = `log-line ${type}`;
+  d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+// Render riding badge list
+const ridingTagsEl = document.getElementById('ridingTags');
+for(const [id, name] of Object.entries(RIDING)) {
+  const span = document.createElement('span');
+  span.className = 'riding-badge';
+  span.textContent = `#${id} ${name}`;
+  ridingTagsEl.appendChild(span);
+}
+
+renderTable();
+updateStats();
+</script>
+</body>
+</html>
